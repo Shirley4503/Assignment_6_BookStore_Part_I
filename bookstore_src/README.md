@@ -1,42 +1,35 @@
-# Homework 1 Example Repo - Bookstore Database + Python CLI
+# Bookstore Database + Python CLI
 
-This example creates a small bookstore database in SQLite and then uses Python to interact with it through a command-line interface.
+Name: Shirley Wang
+
+## Project Description
+
+This project builds a simple bookstore database using SQLite and a Python command-line interface.
+
+The database contains two tables:
+- category: stores book categories
+- book: stores book information such as title, author, price, and category
+
+The Python CLI allows users to interact with the database and perform operations such as viewing, searching, adding, updating, and deleting books.
+
+The bookstore includes the following categories:
+- Self-Help
+- Memoir
+- Fantasy
+- Science Fiction
 
 ## Files
 
-- `createTables.sql` - creates the tables
-- `insertRows.sql` - inserts sample categories and books
-- `bookstore_cli.py` - Python CRUD program
-- `bookstore.db` - database file you will create by running the commands below
+- createTables.sql – creates the database tables
+- insertRows.sql – inserts sample data into the tables
+- bookstore.db – the SQLite database file
+- bookstore_cli.py – Python command-line interface
+- README.md – project description and instructions
 
-## Create the database
+## Create the Database
 
-Run these commands in the terminal:
-
-```bash
-python3 - <<'PY'
-import sqlite3
-sqlite3.connect('bookstore.db').close()
-PY
-```
-
-Then load the SQL files using SQLite in Python or DB Browser for SQLite.
-
-If your environment has the `sqlite3` shell installed, you can run:
+Run the following commands in the terminal:
 
 ```bash
 sqlite3 bookstore.db < createTables.sql
 sqlite3 bookstore.db < insertRows.sql
-```
-
-## Run the Python CLI
-
-```bash
-python3 bookstore_cli.py
-```
-
-## Notes
-
-- This example uses parameterized queries in Python.
-- The `image` field stores the filename only.
-- The actual images can be reused later in the Flask web app.

@@ -4,7 +4,7 @@ DB_NAME = "bookstore.db"
 
 
 def print_divider() -> None:
-    print("\n" + "-" * 40)
+    print("\n" + "-" * 50)
 
 
 def pause() -> None:
@@ -21,7 +21,8 @@ def print_menu() -> None:
     print("5. Add a new book")
     print("6. Update a book price")
     print("7. Delete a book")
-    print("8. Quit")
+    print("8. Search books by author")
+    print("9. Quit")
 
 
 def welcome_screen() -> None:
@@ -32,9 +33,11 @@ def welcome_screen() -> None:
 
 
 def view_categories(cursor: sqlite3.Cursor) -> None:
-    cursor.execute(
-        "SELECT categoryId, categoryName, categoryImage FROM category ORDER BY categoryId"
-    )
+    cursor.execute("""
+        SELECT categoryId, categoryName, categoryImage
+        FROM category
+        ORDER BY categoryId
+    """)
     rows = cursor.fetchall()
 
     print_divider()
@@ -48,13 +51,11 @@ def view_categories(cursor: sqlite3.Cursor) -> None:
 
 
 def view_books(cursor: sqlite3.Cursor) -> None:
-    cursor.execute(
-        """
-        SELECT bookId, title, author, price, image, readNow
+    cursor.execute("""
+        SELECT bookId, categoryId, title, author, isbn, price, image, readNow
         FROM book
-        ORDER BY title
-        """
-    )
+        ORDER BY bookId
+    """)
     rows = cursor.fetchall()
 
     print_divider()
@@ -68,55 +69,55 @@ def view_books(cursor: sqlite3.Cursor) -> None:
 
 
 def view_books_in_category(cursor: sqlite3.Cursor) -> None:
-    category_id = input("Enter a category id: ").strip()
+    try:
+        category_id = int(input("Enter a category id: ").strip())
 
-    cursor.execute(
-        """
-        SELECT book.bookId, book.title, book.author, category.categoryName
-        FROM book
-        JOIN category ON book.categoryId = category.categoryId
-        WHERE category.categoryId = ?
-        ORDER BY book.title
-        """,
-        (category_id,)
-    )
-    rows = cursor.fetchall()
+        cursor.execute("""
+            SELECT b.bookId, b.title, b.author, b.isbn, b.price, b.readNow, c.categoryName
+            FROM book b
+            JOIN category c
+            ON b.categoryId = c.categoryId
+            WHERE c.categoryId = ?
+            ORDER BY b.title
+        """, (category_id,))
+        rows = cursor.fetchall()
 
-    print_divider()
-    print("Books in category")
+        print_divider()
+        print("Books in Category")
 
-    if rows:
-        for row in rows:
-            print(row)
-    else:
-        print("No books found.")
+        if rows:
+            for row in rows:
+                print(row)
+        else:
+            print("No books found in this category.")
+
+    except ValueError:
+        print_divider()
+        print("Invalid category id.")
 
 
-def search_by_title(cursor: sqlite3.Cursor) -> None:
+def search_books_by_title(cursor: sqlite3.Cursor) -> None:
     keyword = input("Enter a title keyword: ").strip()
 
-    cursor.execute(
-        """
+    cursor.execute("""
         SELECT bookId, title, author, price
         FROM book
         WHERE title LIKE ?
         ORDER BY title
-        """,
-        (f"%{keyword}%",)
-    )
+    """, (f"%{keyword}%",))
     rows = cursor.fetchall()
 
     print_divider()
-    print("Matching books")
+    print("Search Results")
 
     if rows:
         for row in rows:
             print(row)
     else:
-        print("No books found.")
+        print("No matching books found.")
 
 
-def add_book(cursor: sqlite3.Cursor) -> None:
+def add_new_book(cursor: sqlite3.Cursor, connection: sqlite3.Connection) -> None:
     try:
         category_id = int(input("Enter category id: ").strip())
         title = input("Enter title: ").strip()
@@ -126,68 +127,99 @@ def add_book(cursor: sqlite3.Cursor) -> None:
         image = input("Enter image filename: ").strip()
         read_now = int(input("Enter readNow (0 or 1): ").strip())
 
-        cursor.execute(
-            """
+        if read_now not in (0, 1):
+            print_divider()
+            print("readNow must be 0 or 1.")
+            return
+
+        cursor.execute("""
             INSERT INTO book (categoryId, title, author, isbn, price, image, readNow)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (category_id, title, author, isbn, price, image, read_now)
-        )
+        """, (category_id, title, author, isbn, price, image, read_now))
+
+        connection.commit()
 
         print_divider()
-        print("Book added.")
+        print("Book added successfully.")
 
     except ValueError:
         print_divider()
-        print("Invalid input.")
+        print("Invalid input. Please enter the correct data type.")
     except sqlite3.IntegrityError as error:
         print_divider()
         print("Database error:", error)
 
 
-def update_price(cursor: sqlite3.Cursor) -> None:
+def update_book_price(cursor: sqlite3.Cursor, connection: sqlite3.Connection) -> None:
     try:
         book_id = int(input("Enter book id: ").strip())
-        new_price = float(input("Enter the new price: ").strip())
+        new_price = float(input("Enter new price: ").strip())
 
-        cursor.execute(
-            "UPDATE book SET price = ? WHERE bookId = ?",
-            (new_price, book_id)
-        )
+        cursor.execute("""
+            UPDATE book
+            SET price = ?
+            WHERE bookId = ?
+        """, (new_price, book_id))
+
+        connection.commit()
 
         print_divider()
         if cursor.rowcount == 0:
-            print("No book found.")
+            print("No book found with that id.")
         else:
-            print("Price updated.")
+            print("Book price updated successfully.")
 
     except ValueError:
         print_divider()
-        print("Invalid input.")
+        print("Invalid input. Please enter a valid id and price.")
 
 
-def delete_book(cursor: sqlite3.Cursor) -> None:
+def delete_book(cursor: sqlite3.Cursor, connection: sqlite3.Connection) -> None:
     try:
         book_id = int(input("Enter book id to delete: ").strip())
 
-        cursor.execute(
-            "DELETE FROM book WHERE bookId = ?",
-            (book_id,)
-        )
+        cursor.execute("""
+            DELETE FROM book
+            WHERE bookId = ?
+        """, (book_id,))
+
+        connection.commit()
 
         print_divider()
         if cursor.rowcount == 0:
-            print("No book found.")
+            print("No book found with that id.")
         else:
-            print("Book deleted.")
+            print("Book deleted successfully.")
 
     except ValueError:
         print_divider()
-        print("Invalid input.")
+        print("Invalid book id.")
+
+
+def search_books_by_author(cursor: sqlite3.Cursor) -> None:
+    keyword = input("Enter an author keyword: ").strip()
+
+    cursor.execute("""
+        SELECT bookId, title, author, price
+        FROM book
+        WHERE author LIKE ?
+        ORDER BY author, title
+    """, (f"%{keyword}%",))
+    rows = cursor.fetchall()
+
+    print_divider()
+    print("Books by Author")
+
+    if rows:
+        for row in rows:
+            print(row)
+    else:
+        print("No matching books found.")
 
 
 def main() -> None:
     with sqlite3.connect(DB_NAME) as connection:
+        connection.execute("PRAGMA foreign_keys = ON;")
         cursor = connection.cursor()
 
         welcome_screen()
@@ -206,24 +238,27 @@ def main() -> None:
                 view_books_in_category(cursor)
                 pause()
             elif choice == "4":
-                search_by_title(cursor)
+                search_books_by_title(cursor)
                 pause()
             elif choice == "5":
-                add_book(cursor)
+                add_new_book(cursor, connection)
                 pause()
             elif choice == "6":
-                update_price(cursor)
+                update_book_price(cursor, connection)
                 pause()
             elif choice == "7":
-                delete_book(cursor)
+                delete_book(cursor, connection)
                 pause()
             elif choice == "8":
+                search_books_by_author(cursor)
+                pause()
+            elif choice == "9":
                 print_divider()
                 print("Goodbye!")
                 break
             else:
                 print_divider()
-                print("Invalid option. Try again.")
+                print("Invalid option. Please try again.")
                 pause()
 
 
