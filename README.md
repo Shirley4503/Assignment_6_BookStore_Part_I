@@ -15,6 +15,7 @@ The bookstore includes the following categories:
 * Fantasy
 * Science Fiction
 
+
 ## Files
 
 * `createTables.sql` - creates the database tables
@@ -22,6 +23,7 @@ The bookstore includes the following categories:
 * `bookstore.db` - the SQLite database file
 * `bookstore_cli.py` - Python command-line interface
 * `README.md` - project description and instructions
+
 
 ## Create the Database
 
