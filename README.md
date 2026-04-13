@@ -1,8 +1,6 @@
 # Bookstore Database + Python CLI
 
-## Name
-
-Shirley Wang
+**Name:** Shirley Wang
 
 ## Project Description
 
